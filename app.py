@@ -10,7 +10,7 @@ from google.genai import types
 
 # ---------------------------------------------------------
 # API 키 및 설정 영역
-RAW_API_KEY = "s2k-rbPCLs8ltTBAC3ujE9MuS2dx0afIJC98xR89mhIl"
+RAW_API_KEY = "enter_your_key"
 API_KEY = "".join(RAW_API_KEY.split()).strip() 
 HEADERS = {"x-api-key": API_KEY} if API_KEY else {}
 
