@@ -18,7 +18,7 @@ HEADERS = {"x-api-key": API_KEY} if API_KEY else {}
 PROFESSOR_ID = "7651824" 
 
 # 🎯 Gemini API 세팅 (3단계 분석용)
-RAW_GEMINI_API_KEY = "AIzaSyBbMNnNWIytZrvKutc38wgeaNxZbBzhUzo" 
+RAW_GEMINI_API_KEY = "enter_your_key" 
 GEMINI_API_KEY = "".join(RAW_GEMINI_API_KEY.split()).strip()
 
 client = genai.Client(api_key=GEMINI_API_KEY)
