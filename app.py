@@ -10,7 +10,7 @@ from google.genai import types
 
 # ---------------------------------------------------------
 # API 키 및 설정 영역
-RAW_API_KEY = "s2k-rbPCLs8ltTBAC3ujE9MuS2dx0afIJC98xR89mhIl"
+RAW_API_KEY = "your_key"
 API_KEY = "".join(RAW_API_KEY.split()).strip() 
 HEADERS = {"x-api-key": API_KEY} if API_KEY else {}
 
@@ -18,7 +18,7 @@ HEADERS = {"x-api-key": API_KEY} if API_KEY else {}
 PROFESSOR_ID = "7651824" 
 
 # 🎯 Gemini API 세팅 (3단계 분석용)
-RAW_GEMINI_API_KEY = "AIzaSyCe17Tn8_E9cYr0UqUz-KRjlJb1jAgpzbI"
+RAW_GEMINI_API_KEY = "your_key"
 GEMINI_API_KEY = "".join(RAW_GEMINI_API_KEY.split()).strip()
 
 client = genai.Client(api_key=GEMINI_API_KEY)
