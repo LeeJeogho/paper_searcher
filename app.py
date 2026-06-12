@@ -10,7 +10,7 @@ from google.genai import types
 
 # ---------------------------------------------------------
 # API 키 및 설정 영역
-RAW_API_KEY = "enter_your_key"
+RAW_API_KEY = "s2k-rbPCLs8ltTBAC3ujE9MuS2dx0afIJC98xR89mhIl"
 API_KEY = "".join(RAW_API_KEY.split()).strip() 
 HEADERS = {"x-api-key": API_KEY} if API_KEY else {}
 
@@ -18,7 +18,7 @@ HEADERS = {"x-api-key": API_KEY} if API_KEY else {}
 PROFESSOR_ID = "7651824" 
 
 # 🎯 Gemini API 세팅 (3단계 분석용)
-RAW_GEMINI_API_KEY = "enter_your_key" 
+RAW_GEMINI_API_KEY = "AIzaSyCe17Tn8_E9cYr0UqUz-KRjlJb1jAgpzbI"
 GEMINI_API_KEY = "".join(RAW_GEMINI_API_KEY.split()).strip()
 
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -157,28 +157,51 @@ def analyze_paper_with_llm(text):
     1. 문맥 기반 정밀 매칭: 이동도(mobility), SS(subthreshold swing), Vth 등의 값이 표(Table)에 없고 초록(Abstract)이나 결론(Conclusion)의 줄글에만 있다면, 해당 수치가 **'정확히 어떤 조건(예: 300°C 열처리, 10nm 두께 등)'에서 측정된 것인지 문맥을 파악**하여 반드시 그 조건과 일치하는 소자 배열에 채워 넣으세요.
     2. 출처가 불분명한 대표 수치 격리: 만약 초록에 "최고 이동도는 15를 달성했다"라고 적혀 있는데 이것이 어떤 소자의 결과인지 텍스트상으로 도저히 연결할 수 없다면, 기존 소자 데이터에 억지로 섞어 넣지 마세요. 대신 `"sample_condition": "Best Device (Abstract summary)"`라는 독립된 객체를 배열에 하나 더 추가하여 거기에만 기입하세요.
     3. 공통 값 일괄 적용: 게이트 절연막 두께(GI thickness), 절연막 물질, 채널 물질 등이 논문 전체 소자에 '공통'으로 사용되었다면, 모든 소자 배열 데이터에 동일하게 그 값을 복사해서 채워주세요. 알 수 없는 정보는 "N/A"로 표기하세요.
-    4. 단위 통일: '두께(Thickness)' 데이터는 본문에 옹스트롬(Å)이나 마이크로미터(µm)로 나와 있더라도, 반드시 **나노미터(nm) 단위로 변환하여 숫자만** 적어주세요. (예: 1000A -> 100)
-    5. 조성비: composition_ratio는 논문에 언급된 비율(예: 1:1:1)이나 원자 퍼센트(at%)를 최대한 그대로 명시해 주세요.
-    6. 신뢰성(PBTS, NBTS) 데이터: 표에 없더라도 논문 후반부 본문 텍스트나 결론에 언급되어 있다면 적극적으로 찾아 기록하세요.
-    7. 값이 명확히 없으면 "N/A"로 표기하세요.
+    3. 맞춤형 단위 강제 변환 (매우 중요):
+        - 각종 '두께(thickness)' 데이터는 본문에 A(옹스트롬)나 um로 나와 있어도 반드시 **nm(나노미터)** 단위로 변환하여 숫자만 적으세요. (예: 1000A -> 100)
+        - '채널 길이/너비(length, width)' 데이터는 반드시 **um(마이크로미터)** 단위로 변환하여 숫자만 적으세요.
+        - '열처리 시간(time)' 데이터는 본문에 시간(hour)이나 분(min)으로 나와 있어도 반드시 계산을 통해 **초(sec)** 단위로 변환하여 숫자만 적으세요. (예: 1h -> 3600, 30min -> 1800)
+        - '열처리 분위기(atmosphere)' 데이터는 뒤에 붙는 'atmosphere' 단어를 무조건 제외하고 **'Air', 'O2', 'N2', 'Vacuum'** 등 핵심 환경 이름만 깔끔하게 표기하세요. (예: "Air atmosphere" -> "Air")
+    4. 조성비: composition_ratio는 논문에 언급된 비율(예: 1:1:1)이나 원자 퍼센트(at%)를 최대한 그대로 명시해 주세요.
+    5. 값이 명확히 없거나 텍스트에서 알 수 없는 정보는 반드시 "N/A"로 표기하세요.
     
     [추출 대상 파라미터 (각 소자별)]
-    - sample_condition: 해당 소자의 핵심 조건 또는 샘플명 (예: "300C Annealed", "Device A", "Best Device (Abstract summary)")
-    - composition_ratio: 물질 조성비 (예: 1:1:1, 10 at% 등)
-    - device_structure_type: 소자 구조 (예: BGTC, TGBC 등)
-    - channel_material_name: 채널 물질명 (예: IGZO, ZnO 등)
-    - channel_thichness_nm: 태널 두께 (숫자만 추출, 반드시 nm 단위로 변환)
-    - channel_length_nm: 채널 길이 (숫자만 추출, 반드시 nm 단위로 변환)
-    - channel_width_nm: 채널 너비 (숫자만 추출, 반드시 nm 단위로 변환)
-    - semiconductor_thickness_nm: 반도체(채널) 두께 (숫자만 추출, 반드시 nm 단위로 변환)
-    - gate_insulator_material: 게이트 절연막 물질 (예: SiO2, Al2O3 등)
-    - gate_insulator_thickness_nm: 게이트 절연막 두께 (숫자만 추출, 반드시 nm 단위로 변환)
-    - Deposition_Method: 증착 방식 (예: ALD, Sputtering 등)
+    - Name: 샘플명 또는 조건 (예: "300C Annealed", "Device A", "Best Device")
+    - channel_material_name: 채널 물질명 (예: IGZO)
+    - composition: 물질 조성비 (예: 1:1:1, 10 at%)
+    - crystallinity: 결정성 (예: Amorphous, Crystalline)
+    - device_structure_type: 소자 구조 (예: BGTC)
+    - gate_electrode_material: 게이트 전극 물질
+    - gate_insulator_material: 게이트 절연막 물질
+    - gate_insulator_process: 게이트 절연막 공정/증착법
+    - gate_insulator_thickness_nm: 게이트 절연막 두께 (nm 단위 숫자만)
+    - substrate_material: 기판 물질
+    - sd_electrode_material: Source/Drain 전극 물질
     - passivation_layer_material: 패시베이션(보호막) 물질
-    - passivation_layer_thickness: 패시베이션 두께 (숫자만 추출, 반드시 nm 단위로 변환)
-    - Pred_Mobility: 이동도 (Field-effect mobility, 단위 제외 숫자만)
-    - PBTS: Positive Bias Temperature Stress 결과 또는 측정 조건 (예: 60C에서 Vth shift 0.5V 등)
-    - NBTS: Negative Bias Temperature Stress 결과 또는 측정 조건 (예: 60C에서 Vth shift -0.2V 등)
+    - passivation_layer_thickness: 패시베이션 두께
+    - passivation_process: 패시베이션 공정/증착법
+    - passivation_RF Power: 패시베이션 RF 파워
+    - passivation_Annealing temperature: 패시베이션 열처리 온도
+    - passivation_Annealing time (sec): 패시베이션 열처리 시간 (초 단위 숫자만)
+    - passivation_Annealing atmosphere: 패시베이션 열처리 분위기 ('atmosphere' 단어 제외, 예: Air, O2)
+    - passivation_Partial O2 pressure: 패시베이션 산소 분압
+    - semiconductor_thickness_nm: 반도체(채널) 두께 (nm 단위 숫자만)
+    - channel_width_um: 채널 너비 (um 단위 숫자만)
+    - channel_length_um: 채널 길이 (um 단위 숫자만)
+    - field_effect_mobility_cm²/V⋅s: 이동도 (숫자만)
+    - threshold_voltage_V: 문턱 전압 (숫자만)
+    - subthreshold_swing_V/dec: SS (숫자만)
+    - on_off_ratio: On/Off 전류비
+    - CH_power_W: 채널 증착 Power (W)
+    - target: 타겟 물질/종류
+    - CH_gas_type: 채널 증착 가스 종류
+    - CH_process_pressure_Torr: 채널 증착 공정 압력 (Torr)
+    - CH_oxygen_partial_pressure_ratio (%): 채널 산소 분압 비율 (%)
+    - CH_substrate_temperature_°C: 채널 기판 온도 (C)
+    - CH_annealing_time_: 채널 열처리 시간 (초 단위 숫자만, 예: 1h -> 3600)
+    - CH_annealing_temperature_°C: 채널 열처리 온도 (C)
+    - CH_annealing_atmosphere: 채널 열처리 분위기 ('atmosphere' 단어 제외, 예: Air, O2)
+    - Deposition_Method: 증착 방식 (예: ALD, Sputtering 등)
 
     반드시 마크다운 코드 블록 없이 순수한 JSON 배열만 출력하세요.
     
